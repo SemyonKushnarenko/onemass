@@ -1,0 +1,52 @@
+services:
+  app:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    ports:
+      - '${APP_PORT:-7214}:7214'
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - DB_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASS=${POSTGRES_PASS}
+      - POSTGRES_NAME=${POSTGRES_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT}
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:15
+    ports:
+      - '5432:5432'
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB=${POSTGRES_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - '6379:6379'
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://app:7214
+    ports:
+      - '4173:80'
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:
